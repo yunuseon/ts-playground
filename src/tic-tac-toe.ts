@@ -38,7 +38,7 @@ type BoardValues = GetBoardValues<Board>;
 type Combination = [number, number, number];
 type Index = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-type WinningCombinations = [
+type WinningCombinationIndices = [
     [0, 1, 2],
     [3, 4, 5],
     [6, 7, 8],
@@ -52,27 +52,27 @@ type WinningCombinations = [
 ];
 
 
-type SearchSetIndices<Search extends BoardValue> = _SearchSetIndices<Search, BoardValues, Index>;
+type GetBoardValueIndices<Search extends BoardValue> = _GetBoardValueIndices<Search, BoardValues, Index>;
 
-type _SearchSetIndices<Search extends BoardValue, Values extends BoardValue[], CurrentIndex extends List<number>> = 
+type _GetBoardValueIndices<Search extends BoardValue, Values extends BoardValue[], CurrentIndex extends List<number>> = 
     Length<Values> extends 0 ? 
         [] :
         Head<Values> extends Search ? 
-            [Head<CurrentIndex>, ..._SearchSetIndices<Search, Tail<Values>, Tail<CurrentIndex>>] : 
-            [-1, ..._SearchSetIndices<Search, Tail<Values>, Tail<CurrentIndex>>]
+            [Head<CurrentIndex>, ..._GetBoardValueIndices<Search, Tail<Values>, Tail<CurrentIndex>>] : 
+            [-1, ..._GetBoardValueIndices<Search, Tail<Values>, Tail<CurrentIndex>>]
 
-type MapSingleCombination<SearchIndices extends List<number>, C extends Combination> = [
-    SearchIndices[C[0]],
-    SearchIndices[C[1]],
-    SearchIndices[C[2]]
+type GetSingleCombination<BoardIndices extends List<number>, C extends Combination> = [
+    BoardIndices[C[0]],
+    BoardIndices[C[1]],
+    BoardIndices[C[2]]
 ];
 
-type MapAllCombinations<Search extends Player> = _MapAllCombinations<SearchSetIndices<Search>, WinningCombinations>;
+type GetAllCombinations<Search extends Player> = _GetAllCombinations<GetBoardValueIndices<Search>, WinningCombinationIndices>;
 
-type _MapAllCombinations<SearchIndices extends List<number>, Combinations extends List<Combination>> = 
+type _GetAllCombinations<BoardIndices extends List<number>, Combinations extends List<Combination>> = 
     Length<Combinations> extends 0 ? 
         [] :
-        [MapSingleCombination<SearchIndices, Head<Combinations>>, ..._MapAllCombinations<SearchIndices, Tail<Combinations>> ];
+        [GetSingleCombination<BoardIndices, Head<Combinations>>, ..._GetAllCombinations<BoardIndices, Tail<Combinations>> ];
 
 type IsCombinationValid<Combination extends [number, number, number]> = 
     Combination extends [infer A, infer B, infer C] ?
@@ -82,14 +82,14 @@ type IsCombinationValid<Combination extends [number, number, number]> =
         true : 
     false; 
 
-type IsWinning<Search extends Player> = _IsWinning<MapAllCombinations<Search>>
+type IsWinning<Search extends Player> = _IsWinning<GetAllCombinations<Search>>
 
-type _IsWinning<MappedCombinations extends List<Combination>> = 
-    Length<MappedCombinations> extends 0 ? 
+type _IsWinning<BoardCombinations extends List<Combination>> = 
+    Length<BoardCombinations> extends 0 ? 
         false :
-        IsCombinationValid<Head<MappedCombinations>> extends true ? 
+        IsCombinationValid<Head<BoardCombinations>> extends true ? 
             true : 
-            _IsWinning<Tail<MappedCombinations>>;
+            _IsWinning<Tail<BoardCombinations>>;
 
 
 type _Winner = (IsWinning<X> extends true ? X : never) | (IsWinning<O> extends true ? O : never);
