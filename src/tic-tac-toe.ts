@@ -1,6 +1,6 @@
 type GetBoardValues<T extends string> = 
-    T extends `${infer S}${infer Ux}` ? 
-        (S extends BoardValue ? [S, ...GetBoardValues<Ux>] : GetBoardValues<Ux>) :
+    T extends `${infer Head}${infer Tail}` ? 
+        (Head extends BoardValue ? [Head, ...GetBoardValues<Tail>] : GetBoardValues<Tail>) :
         [];
 
 type List<T = any> = ReadonlyArray<T>;
@@ -32,11 +32,10 @@ _____|_____|_____
 
 type X = 'X';
 type O = 'O';
-type Player = X | O;
-type BoardValue = Player | '-';
-type BoardValues = GetBoardValues<Board>;
+type PlayerSymbol = X | O;
+type BoardValue = PlayerSymbol | '-';
+
 type Combination = [number, number, number];
-type Index = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 type WinningCombinationIndices = [
     [0, 1, 2],
@@ -47,42 +46,68 @@ type WinningCombinationIndices = [
     [1, 4, 7],
     [2, 5, 8],
 
-    [2, 4, 8],
+    [0, 4, 8],
     [2, 4, 6],    
 ];
 
+type BoardValues = GetBoardValues<Board>;
 
-type GetBoardValueIndices<Search extends BoardValue> = _GetBoardValueIndices<Search, BoardValues, Index>;
+type Index = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-type _GetBoardValueIndices<Search extends BoardValue, Values extends BoardValue[], CurrentIndex extends List<number>> = 
-    Length<Values> extends 0 ? 
-        [] :
-        Head<Values> extends Search ? 
-            [Head<CurrentIndex>, ..._GetBoardValueIndices<Search, Tail<Values>, Tail<CurrentIndex>>] : 
-            [-1, ..._GetBoardValueIndices<Search, Tail<Values>, Tail<CurrentIndex>>]
+type _GetBoardValueIndices<
+        Player extends BoardValue, 
+        Values extends BoardValue[], 
+        CurrentIndex extends List<number>
+    > = 
+    Length<Values> extends 0 
+        ? [] 
+        : [
+            Head<Values> extends Player ? Head<CurrentIndex> : -1, 
+            ..._GetBoardValueIndices<Player, Tail<Values>, Tail<CurrentIndex>>
+          ];
 
-type GetSingleCombination<BoardIndices extends List<number>, C extends Combination> = [
+type GetBoardValueIndices<Player extends BoardValue> = _GetBoardValueIndices<Player, BoardValues, Index>;
+
+
+
+
+type GetSingleCombination<
+        BoardIndices extends List<number>, 
+        C extends Combination
+    > = [
     BoardIndices[C[0]],
     BoardIndices[C[1]],
     BoardIndices[C[2]]
 ];
 
-type GetAllCombinations<Search extends Player> = _GetAllCombinations<GetBoardValueIndices<Search>, WinningCombinationIndices>;
+type GetAllCombinations<Search extends PlayerSymbol> = 
+    _GetAllCombinations<GetBoardValueIndices<Search>, WinningCombinationIndices>;
 
-type _GetAllCombinations<BoardIndices extends List<number>, Combinations extends List<Combination>> = 
-    Length<Combinations> extends 0 ? 
-        [] :
-        [GetSingleCombination<BoardIndices, Head<Combinations>>, ..._GetAllCombinations<BoardIndices, Tail<Combinations>> ];
+type _GetAllCombinations<
+    BoardIndices extends List<number>, 
+    Combinations extends List<Combination>
+    > = 
+    Length<Combinations> extends 0 
+        ? [] 
+        : [
+            GetSingleCombination<BoardIndices, Head<Combinations>>, 
+            ..._GetAllCombinations<BoardIndices, Tail<Combinations>> 
+        ];
+
+
+
+
 
 type IsCombinationValid<Combination extends [number, number, number]> = 
-    Combination extends [infer A, infer B, infer C] ?
-        A extends -1 ? false :
-        B extends -1 ? false :
-        C extends -1 ? false : 
-        true : 
-    false; 
+    Combination[0] extends -1 
+        ? false 
+        : Combination[1] extends -1 
+            ? false 
+            : Combination[2] extends -1 
+                ? false 
+                : true; 
 
-type IsWinning<Search extends Player> = _IsWinning<GetAllCombinations<Search>>
+type IsWinning<Search extends PlayerSymbol> = _IsWinning<GetAllCombinations<Search>>
 
 type _IsWinning<BoardCombinations extends List<Combination>> = 
     Length<BoardCombinations> extends 0 ? 
@@ -92,10 +117,16 @@ type _IsWinning<BoardCombinations extends List<Combination>> =
             _IsWinning<Tail<BoardCombinations>>;
 
 
-type _Winner = (IsWinning<X> extends true ? X : never) | (IsWinning<O> extends true ? O : never);
+type _Winner = 
+    (IsWinning<X> extends true 
+        ? X 
+        : never
+    ) | 
+    (IsWinning<O> extends true 
+        ? O 
+        : never
+    );
 
-type Winner = _Winner extends never ? 
-                'draw!' : 
-                Player extends _Winner ? 
-                    'invalid' :
-                    `${_Winner} wins!`;
+type Winner = _Winner extends never 
+                ? 'draw!' 
+                : `${_Winner} wins!`;
