@@ -59,29 +59,17 @@ type GetBoardValuesForCombination<$Combination extends Combination> =
     BoardValues[$Combination[1]] |
     BoardValues[$Combination[2]];
     
-type _IsWinning<
-        $Player extends Player, 
-        $Combinations extends List<Combination>
-    > = 
-        Length<$Combinations> extends 0
-            ? false
-            : GetBoardValuesForCombination<Head<$Combinations>> extends $Player
-                ? true
-                : _IsWinning<$Player, Tail<$Combinations>>;
+type _WhoIsWinning<$Combinations extends List<Combination>> = 
+    Length<$Combinations> extends 0 
+        ? never
+        : GetBoardValuesForCombination<Head<$Combinations>> extends X 
+            ? X
+            : GetBoardValuesForCombination<Head<$Combinations>> extends O 
+                ? O 
+                : _WhoIsWinning<Tail<$Combinations>>;
 
-type IsWinning<$Player extends Player> =
-    _IsWinning<$Player, WinningCombinationIndices>;
+type WhoIsWinning = _WhoIsWinning<WinningCombinationIndices>;
 
-type _Winner = 
-    (IsWinning<X> extends true 
-        ? X 
-        : never
-    ) | 
-    (IsWinning<O> extends true 
-        ? O 
-        : never
-    );
-
-type Winner = _Winner extends never 
+type Winner = WhoIsWinning extends never 
                 ? 'draw!' 
-                : `${_Winner} wins!`;
+                : `${WhoIsWinning} wins!`;
