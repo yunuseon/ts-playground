@@ -32,8 +32,8 @@ _____|_____|_____
 
 type X = 'X';
 type O = 'O';
-type PlayerSymbol = X | O;
-type BoardValue = PlayerSymbol | '-';
+type Player = X | O;
+type BoardValue = Player | '-';
 
 type Combination = [number, number, number];
 
@@ -47,7 +47,7 @@ type WinningCombinationIndices = [
     [2, 5, 8],
 
     [0, 4, 8],
-    [2, 4, 6],    
+    [2, 4, 6]
 ];
 
 type BoardValues = GetBoardValues<Board>;
@@ -55,67 +55,52 @@ type BoardValues = GetBoardValues<Board>;
 type Index = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 type _GetBoardValueIndices<
-        Player extends BoardValue, 
-        Values extends BoardValue[], 
-        CurrentIndex extends List<number>
+        $Player extends Player, 
+        $Values extends BoardValue[], 
+        $CurrentIndex extends List<number>
     > = 
-    Length<Values> extends 0 
+    Length<$Values> extends 0 
         ? [] 
         : [
-            Head<Values> extends Player ? Head<CurrentIndex> : -1, 
-            ..._GetBoardValueIndices<Player, Tail<Values>, Tail<CurrentIndex>>
+            Head<$Values> extends $Player ? Head<$CurrentIndex> : -1, 
+            ..._GetBoardValueIndices<$Player, Tail<$Values>, Tail<$CurrentIndex>>
           ];
 
-type GetBoardValueIndices<Player extends BoardValue> = _GetBoardValueIndices<Player, BoardValues, Index>;
-
-
-
+type GetBoardValueIndices<$Player extends Player> = 
+    _GetBoardValueIndices<$Player, BoardValues, Index>;
 
 type GetSingleCombination<
-        BoardIndices extends List<number>, 
-        C extends Combination
+        $BoardIndices extends List<number>, 
+        $Combination extends Combination
     > = [
-    BoardIndices[C[0]],
-    BoardIndices[C[1]],
-    BoardIndices[C[2]]
+    $BoardIndices[$Combination[0]],
+    $BoardIndices[$Combination[1]],
+    $BoardIndices[$Combination[2]]
 ];
 
-type GetAllCombinations<Search extends PlayerSymbol> = 
-    _GetAllCombinations<GetBoardValueIndices<Search>, WinningCombinationIndices>;
+type GetAllCombinations<$Player extends Player> = 
+    _GetAllCombinations<GetBoardValueIndices<$Player>, WinningCombinationIndices>;
 
 type _GetAllCombinations<
-    BoardIndices extends List<number>, 
-    Combinations extends List<Combination>
+    $BoardIndices extends List<number>, 
+    $Combinations extends List<Combination>
     > = 
-    Length<Combinations> extends 0 
+    Length<$Combinations> extends 0 
         ? [] 
         : [
-            GetSingleCombination<BoardIndices, Head<Combinations>>, 
-            ..._GetAllCombinations<BoardIndices, Tail<Combinations>> 
+            GetSingleCombination<$BoardIndices, Head<$Combinations>>, 
+            ..._GetAllCombinations<$BoardIndices, Tail<$Combinations>> 
         ];
 
-
-
-
-
-type IsCombinationValid<Combination extends [number, number, number]> = 
-    Combination[0] extends -1 
-        ? false 
-        : Combination[1] extends -1 
-            ? false 
-            : Combination[2] extends -1 
-                ? false 
-                : true; 
-
-type IsWinning<Search extends PlayerSymbol> = _IsWinning<GetAllCombinations<Search>>
-
-type _IsWinning<BoardCombinations extends List<Combination>> = 
-    Length<BoardCombinations> extends 0 ? 
+type _IsWinning<$BoardCombinations extends List<Combination>> = 
+    Length<$BoardCombinations> extends 0 ? 
         false :
-        IsCombinationValid<Head<BoardCombinations>> extends true ? 
-            true : 
-            _IsWinning<Tail<BoardCombinations>>;
+        -1 extends Head<$BoardCombinations>[number] ? 
+            _IsWinning<Tail<$BoardCombinations>> : 
+            true;
 
+type IsWinning<$Player extends Player> = 
+    _IsWinning<GetAllCombinations<$Player>>;
 
 type _Winner = 
     (IsWinning<X> extends true 
